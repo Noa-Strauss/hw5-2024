@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pathlib
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from typing import Union, Tuple
 
 
@@ -32,5 +32,22 @@ class QuestionnaireAnalysis:
    bins : np.ndarray
      Bin edges
        """
+       # Assuming the age data is stored in a column called 'age'
+       ages = self.data['age']
+       # Define the bin edges
+       bins = np.arange(0, 101, 10)  # Creates bins [0, 10), [10, 20), ..., [90, 100]
+       # Calculate the histogram
+       hist, bin_edges = np.histogram(ages, bins=bins)
+
+       # Plot the histogram
+       plt.figure(figsize=(8, 6))
+       plt.hist(ages, bins=bins, edgecolor='black')
+       plt.title('Age Distribution of Participants')
+       plt.xlabel('Age')
+       plt.ylabel('Number of Participants')
+       plt.xticks(bins)
+       plt.show()
+       return hist, bin_edges
+    
 
 
