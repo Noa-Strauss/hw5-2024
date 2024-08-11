@@ -1,9 +1,24 @@
+import pathlib
+import re
 import numpy as np
 import pandas as pd
-import pathlib
 import matplotlib.pyplot as plt
 from typing import Union, Tuple
 
+def is_valid_email(email: str) -> bool:
+    """This function uses a regex to check the validity of an email. An email is valid if:
+    1. There is only one @ sign between the local and domain part
+    2. There are no 2 consecutive dots or a pattern of ".@" or "@."
+    3. There is a TLD of at least 2 english letters
+
+  Args:
+      email (str): a string of the email
+
+  Returns:
+      bool
+    """
+    pattern = r'^(?!\.)((?!.*\.\.)(?!.*\@\.)(?!.*\.\@)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$'
+    return re.match(pattern, email) is not None
 
 class QuestionnaireAnalysis:
     """
@@ -48,6 +63,18 @@ class QuestionnaireAnalysis:
        plt.xticks(bins)
        plt.show()
        return hist, bin_edges
+    
+    def remove_rows_without_mail(self) -> pd.DataFrame:
+        """Checks self.data for rows with invalid emails, and removes them.
+    Returns
+    -------
+    df : pd.DataFrame
+    A corrected DataFrame, i.e. the same table but with the erroneous rows removed and
+    the (ordinal) index after a reset.
+    """
+        valid_emails_df = self.data[self.data['email'].apply(lambda email: is_valid_email(email))]
+        return valid_emails_df
+    
     
 
 
