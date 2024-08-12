@@ -17,8 +17,18 @@ def is_valid_email(email: str) -> bool:
   Returns:
       bool
     """
-    pattern = r'^(?!\.)((?!.*\.\.)(?!.*\@\.)(?!.*\.\@)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$'
+    pattern = r'^(?!\.)((?!.*\.\.)(?!.*\@\.)(?!.*\.\@)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+)$'
     return re.match(pattern, email) is not None
+
+def fill_missing_with_mean(row):
+    # Get the questions for the current row
+    questions = row[['q1', 'q2', 'q3', 'q4', 'q5']]
+    
+    # Calculate the mean of the non-NA values
+    mean_value = questions.mean()
+    
+    # Replace NA values with the mean
+    return questions.fillna(mean_value)
 
 class QuestionnaireAnalysis:
     """
@@ -40,12 +50,12 @@ class QuestionnaireAnalysis:
     
     def show_age_distrib(self) -> Tuple[np.ndarray, np.ndarray]:
        """Calculates and plots the age distribution of the participants.
-    Returns
-   -------
-   hist : np.ndarray
-     Number of people in a given bin
-   bins : np.ndarray
-     Bin edges
+       Returns
+       -------
+       hist : np.ndarray
+       Number of people in a given bin
+       bins : np.ndarray
+       Bin edges
        """
        # Assuming the age data is stored in a column called 'age'
        ages = self.data['age']
@@ -66,15 +76,40 @@ class QuestionnaireAnalysis:
     
     def remove_rows_without_mail(self) -> pd.DataFrame:
         """Checks self.data for rows with invalid emails, and removes them.
-    Returns
-    -------
-    df : pd.DataFrame
-    A corrected DataFrame, i.e. the same table but with the erroneous rows removed and
-    the (ordinal) index after a reset.
-    """
+        Returns
+        -------
+        df : pd.DataFrame
+        A corrected DataFrame, i.e. the same table but with the erroneous rows removed and
+        the (ordinal) index after a reset.
+        """
         valid_emails_df = self.data[self.data['email'].apply(lambda email: is_valid_email(email))]
         return valid_emails_df
     
-    
+    def fill_na_with_mean(self) -> Tuple[pd.DataFrame, np.ndarray]:
+       """Finds, in the original DataFrame, the subjects that didn't answer
+       all questions, and replaces that missing value with the mean of the
+       other grades for that student.
+
+       Returns
+       -------
+       df : pd.DataFrame
+       The corrected DataFrame after insertion of the mean grade
+       arr : np.ndarray
+         Row indices of the students that their new grades were generated
+       """
+       # List of columns to check for NA values
+       q_columns = ['q1', 'q2', 'q3', 'q4', 'q5']
+
+       # Find indices of rows with any NA values in the q columns
+       indices_with_na_in_q_columns = np.where(self.data[q_columns].isna().any(axis=1))[0]
+
+       for idx in indices_with_na_in_q_columns:
+        # Calculate the mean of the row (ignoring NA values)
+            row_mean = self.data.loc[idx, q_columns].mean()
+        # Fill NA values with the row mean
+            self.data.loc[idx, q_columns] = self.data.loc[idx, q_columns].fillna(row_mean)
+        
+       return self.data, indices_with_na_in_q_columns
+       
 
 
